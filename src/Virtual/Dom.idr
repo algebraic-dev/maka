@@ -1,17 +1,15 @@
 module Virtual.Dom
 
+import Generics.Derive
+%language ElabReflection
+
 public export
 data Attribute msg 
     = Id String 
     | ClassList (List String) 
     | OnClick msg
 
-public export 
-Eq msg => Eq (Attribute msg) where 
-    (==) (Id str) (Id str')             = str == str'
-    (==) (ClassList ls) (ClassList ls') = ls == ls'
-    (==) (OnClick msg) (OnClick msg')   = msg == msg' 
-    (==) _                            _ = False
+%runElab derive "Attribute" [Generic, Eq]
 
 mutual 
     public export

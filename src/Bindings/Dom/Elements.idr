@@ -14,6 +14,33 @@ public export data Symbol : Type -> Type -> Type where
 public export
 data Element = NodeEl NodeElement | TextEl TextElement
 
+%foreign 
+    (js """
+    (_, _1, el, sym, ev, data) => {
+        el[ev] = () => {
+            if(window.events && window.events.get(sym)) {
+                let [fn, state] = window.events.get(sym);
+                window.events.set(sym, [fn, fn(data, state)])
+            }
+        }
+    }
+    """)
+
+prim__addEventListener : GenericNode -> Symbol msg model -> String -> msg -> PrimIO ()
+
+%foreign 
+    (js """
+        (_, _1, _2, symbol, fn, def, world) => {
+            if(window.events == undefined) {
+                window.events = new Map();
+            }
+            window.events.set(symbol, [(a,b) => fn(a)(b)(world), def])
+        }
+        """)
+
+prim__addListener : Symbol a b -> (a -> (b,c) -> IO (b, c)) -> (b, c) -> PrimIO ()
+
+
 %foreign (js "(tag) => document.createElement(tag)")
 prim__createNode : String -> PrimIO NodeElement
 
@@ -29,23 +56,14 @@ prim__appendChild : NodeElement -> GenericNode -> PrimIO ()
 %foreign (js "(child) => child.parentNode")
 prim__getParent : GenericNode -> PrimIO NodeElement
 
-%foreign (js "(id) => el.remove()")
+%foreign (js "(el) => el.remove()")
 prim__remove : GenericNode -> PrimIO ()
 
 %foreign (js "(old, neww) => old.replaceWith(neww)")
 prim__replaceWith : GenericNode -> GenericNode -> PrimIO ()
 
-%foreign (js """
-             (_, _1, el, sym, ev, data) => {
-                 el.addEventListener(ev, () => {
-                    if(window.events && window.events.get(sym)) {
-                        let [fn, state] = window.events.get(sym);
-                        window.events.set(sym, [fn, fn(data, state)])
-                    }
-                 })
-             }
-             """)
-prim__addEventListener : GenericNode -> Symbol msg model -> String -> msg -> PrimIO ()
+%foreign (js "(el, attr) => {el[attr] = undefined}")
+prim__removeListener : NodeElement -> String -> PrimIO ()
 
 %foreign (js "(el, attr) => el.removeAttribute(attr)")
 prim__removeAttribute : NodeElement -> String -> PrimIO ()
@@ -65,15 +83,6 @@ prim__idxChild : Children -> Int -> PrimIO GenericNode
 %foreign (js "(_, _1, name) => Symbol(name)")
 prim__createSymbol : String -> Symbol a b
 
-%foreign(js """
-            (_, _1, _2, symbol, fn, def, world) => {
-                if(window.events == undefined) {
-                    window.events = new Map();
-                }
-                window.events.set(symbol, [(a,b) => fn(a)(b)(world), def])
-            }
-            """)
-prim__addListener : Symbol a b -> (a -> (b,c) -> IO (b, c)) -> (b, c) -> PrimIO ()
 
 public export
 Cast Element GenericNode where 
@@ -87,6 +96,9 @@ public export
 addEventListener : GenericNode -> Symbol a b -> String -> a -> IO ()
 addEventListener g s ev ret = primIO $ prim__addEventListener g s ev ret 
 
+public export
+removeListener : NodeElement -> String -> IO ()
+removeListener g s = primIO $ prim__removeListener g s
 
 public export 
 createSymbol : String -> Symbol a b

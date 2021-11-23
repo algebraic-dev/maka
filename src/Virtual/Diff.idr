@@ -2,6 +2,7 @@ module Virtual.Diff
 
 import Virtual.Dom
 import Data.List
+import Debug.Trace
 
 public export
 data AttributePatch msg 
@@ -15,6 +16,19 @@ data Patch msg
     | Update (List (Patch msg)) (List (AttributePatch msg))
     | Replace (Html msg)
     | NoPatch
+
+public export
+Show (AttributePatch msg) where 
+    show (AddAttr s) = "+attr"
+    show (RemoveAttr s) = "-attr"
+
+public export
+Show (Patch msg) where 
+    show (Add n) = "+"
+    show (Remove) = "-"
+    show (Update n l) = "(update \{show n} \{show l})"
+    show (Replace n) = "replace"
+    show NoPatch = "∅"
 
 mutual
     diffChildren : Eq msg => List (Html msg) -> List (Html msg) -> List (Patch msg) -> List (Patch msg)
@@ -40,5 +54,5 @@ mutual
     diff (HtmlNode node) new@(HtmlNode node') with (node.tag /= node'.tag)
         _ | True  = Replace new 
         _ | False = let children = (diffChildren `on` children) node node' []
-                        attrs    = (diffAttrs `on` attributes)    node node'
-                    in Update children attrs
+                        attrs    = (diffAttrs `on` attributes)  node node'
+                    in Update (reverse children) attrs

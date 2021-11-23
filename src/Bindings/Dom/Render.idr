@@ -7,10 +7,11 @@ import Virtual.Diff
 
 import Data.String
 import Data.List
+import Debug.Trace
 
 mutual 
     renderAttr : Symbol msg model -> NodeElement -> Attribute msg -> IO ()
-    renderAttr s parent (OnClick msg) = addEventListener (believe_me parent) s "click" msg
+    renderAttr s parent (OnClick msg) = addEventListener (believe_me parent) s "onclick" msg
     renderAttr s parent (Id id) = setAttribute parent "id" id
     renderAttr s parent (ClassList list) = setAttribute parent "className" (unwords list)
 
@@ -36,12 +37,14 @@ mutual
     patchAttrs s el (RemoveAttr attr :: attrs) = removeAttr el attr >> patchAttrs s el attrs
         where 
             removeAttr : NodeElement -> Attribute msg -> IO ()
-            removeAttr el (OnClick msg) = pure () -- to Implement
+            removeAttr el (OnClick msg) = removeListener el "onevent"
             removeAttr el (Id _)        = removeAttribute el "id"
             removeAttr el (ClassList _) = removeAttribute el "className"
 
-    patchChildren : Symbol msg model -> List GenericNode -> List (Patch msg) -> IO ()
-    patchChildren s nodes patches  = for_ (zip nodes patches) (uncurry $ patch s)
+    patchChildren : Symbol msg model -> GenericNode -> List GenericNode -> List (Patch msg) -> IO ()
+    patchChildren s par (x :: xs) (p :: ps) = patch s x p   >> patchChildren s par xs ps 
+    patchChildren s par []        (p :: ps) = patch s par p >> patchChildren s par [] ps
+    patchChildren s _   []               [] = pure ()
 
     public export
     patch : Symbol msg model -> GenericNode -> Patch msg -> IO ()
@@ -50,11 +53,11 @@ mutual
     
     patch s el (Update children attrs) = do 
         realChildren <- getChildren (believe_me el)
-        patchChildren s realChildren children 
+        patchChildren s el realChildren children 
         patchAttrs s (believe_me el) attrs 
 
     patch s el (Add x) = do 
-        parent <- getParent el 
-        render s x >>= appendChild parent
+        res <- render s x 
+        appendChild (believe_me el) res
 
     patch s el Remove = remove el

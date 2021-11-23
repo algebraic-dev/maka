@@ -5,10 +5,11 @@ import Bindings.Helpers
 -- Opaque types that will represent the data 
 -- in javascript 
 
-public export data GenericNode : Type where 
-public export data NodeElement : Type where 
-public export data TextElement : Type where 
-public export data Children : Type where
+public export data GenericNode : Type    where 
+public export data NodeElement : Type    where 
+public export data TextElement : Type    where 
+public export data Children    : Type    where
+public export data Symbol : Type -> Type -> Type where
 
 public export
 data Element = NodeEl NodeElement | TextEl TextElement
@@ -25,11 +26,26 @@ prim__setAttribute : NodeElement -> String -> String -> PrimIO ()
 %foreign (js "(parent, child) => parent.appendChild(child)")
 prim__appendChild : NodeElement -> GenericNode -> PrimIO ()
 
+%foreign (js "(child) => child.parentNode")
+prim__getParent : GenericNode -> PrimIO NodeElement
+
 %foreign (js "(id) => el.remove()")
 prim__remove : GenericNode -> PrimIO ()
 
 %foreign (js "(old, neww) => old.replaceWith(neww)")
 prim__replaceWith : GenericNode -> GenericNode -> PrimIO ()
+
+%foreign (js """
+             (_, _1, el, sym, ev, data) => {
+                 el.addEventListener(ev, () => {
+                    if(window.events && window.events.get(sym)) {
+                        let [fn, state] = window.events.get(sym);
+                        window.events.set(sym, [fn, fn(data, state)])
+                    }
+                 })
+             }
+             """)
+prim__addEventListener : GenericNode -> Symbol msg model -> String -> msg -> PrimIO ()
 
 %foreign (js "(el, attr) => el.removeAttribute(attr)")
 prim__removeAttribute : NodeElement -> String -> PrimIO ()
@@ -46,6 +62,19 @@ prim__childLength : Children -> PrimIO Int
 %foreign (js "(child, n) => child[n]")
 prim__idxChild : Children -> Int -> PrimIO GenericNode
 
+%foreign (js "(_, _1, name) => Symbol(name)")
+prim__createSymbol : String -> Symbol a b
+
+%foreign(js """
+            (_, _1, _2, symbol, fn, def, world) => {
+                if(window.events == undefined) {
+                    window.events = new Map();
+                }
+                window.events.set(symbol, [(a,b) => fn(a)(b)(world), def])
+            }
+            """)
+prim__addListener : Symbol a b -> (a -> (b,c) -> IO (b, c)) -> (b, c) -> PrimIO ()
+
 public export
 Cast Element GenericNode where 
     cast (NodeEl n) = believe_me n
@@ -55,8 +84,25 @@ public export Cast NodeElement GenericNode where cast n = believe_me n
 public export Cast TextElement GenericNode where cast n = believe_me n
 
 public export
+addEventListener : GenericNode -> Symbol a b -> String -> a -> IO ()
+addEventListener g s ev ret = primIO $ prim__addEventListener g s ev ret 
+
+
+public export 
+createSymbol : String -> Symbol a b
+createSymbol = prim__createSymbol
+
+public export 
+addListener : Symbol a b -> (a -> (b,c) -> IO (b,c)) -> (b,c) -> IO ()
+addListener symbol fn init = primIO $ prim__addListener symbol fn init
+
+public export
+getParent : GenericNode -> IO NodeElement
+getParent = primIO . prim__getParent
+
+public export
 createNode : String -> IO NodeElement
-createNode str = primIO $ prim__createNode str
+createNode = primIO . prim__createNode
 
 public export
 createTextNode : String -> IO TextElement

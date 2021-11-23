@@ -27,8 +27,8 @@ mutual
     diffAttrs old new = 
         let removed = old \\ new
             added   = new \\ old 
-        in (map AddAttr added) ++ 
-           (map RemoveAttr removed)
+        in (map RemoveAttr removed) 
+        ++ (map AddAttr added)
     
     public export
     diff : Eq msg => Html msg -> Html msg -> Patch msg 

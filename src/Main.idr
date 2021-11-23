@@ -2,9 +2,7 @@ module Main
 
 import Maka.Elements
 import Maka.Attributes
-import Bindings.Dom.Elements
-import Bindings.Dom.Render
-import Virtual.Diff
+import Maka.App
 
 data Model = Increment | Decrement
 
@@ -17,7 +15,7 @@ update : Model -> Int -> Int
 update msg counter =
   case msg of 
     Increment => counter + 1
-    Decrement => counter + 1
+    Decrement => counter - 1
 
 view : Int -> Html Model 
 view counter =
@@ -28,15 +26,4 @@ view counter =
       ]
 
 main : IO ()
-main = do 
-  Just main <- getElementById "main" 
-    | Nothing => putStrLn "Não tem o main"
-
-  rendered <- render (view 100)
-  appendChild (cast main) rendered
-
-  let d = diff (view 1) (view 2)
-
-  patch (believe_me rendered) d
-
-  putStrLn "Rendered"
+main = start view update 0

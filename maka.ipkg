@@ -2,8 +2,9 @@ package maka
 
 main       = Main
 sourcedir  = "src"
-executable = "maka.js"
+executable = "unoptimized.js"
 outputdir  = "build"
-depends    = elab-util, contrib
+depends    = elab-util, contrib, sop
 
 opts="--codegen javascript"
+postbuild = "closure-compiler 'build/unoptimized.js' --js_output_file build/maka.js --language_out ES_2020"

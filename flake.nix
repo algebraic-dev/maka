@@ -6,7 +6,7 @@
     utils.url       = "github:numtide/flake-utils";
     idris2-pkgs.url = "github:claymager/idris2-pkgs";
   };
-
+  
   outputs = { self, nixpkgs, utils, idris2-pkgs }:
     utils.lib.eachDefaultSystem (system:
     let pkgs = import nixpkgs { inherit system; overlays = [ idris2-pkgs.overlay ]; };
@@ -14,6 +14,7 @@
         project  = "maka"; 
         packages = with pkgs; [ 
           idris2.withLibs.sop.elab-util
+          closurecompiler
           nodejs 
         ]; 
     in { 

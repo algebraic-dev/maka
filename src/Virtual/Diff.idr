@@ -17,19 +17,6 @@ data Patch msg
     | Replace (Html msg)
     | NoPatch
 
-public export
-Show (AttributePatch msg) where 
-    show (AddAttr s) = "+attr"
-    show (RemoveAttr s) = "-attr"
-
-public export
-Show (Patch msg) where 
-    show (Add n) = "+"
-    show (Remove) = "-"
-    show (Update n l) = "(update \{show n} \{show l})"
-    show (Replace n) = "replace"
-    show NoPatch = "∅"
-
 mutual
     diffChildren : Eq msg => List (Html msg) -> List (Html msg) -> List (Patch msg) -> List (Patch msg)
     diffChildren []        []        acc = acc
@@ -38,11 +25,7 @@ mutual
     diffChildren (x :: xs) (y :: ys) acc = diffChildren xs ys (diff x y :: acc)
 
     diffAttrs : Eq msg => List (Attribute msg) -> List (Attribute msg) -> List (AttributePatch msg) 
-    diffAttrs old new = 
-        let removed = old \\ new
-            added   = new \\ old 
-        in (map RemoveAttr removed) 
-        ++ (map AddAttr added)
+    diffAttrs old new = (map RemoveAttr (old \\ new)) ++ (map AddAttr (new \\ old))
     
     public export
     diff : Eq msg => Html msg -> Html msg -> Patch msg 

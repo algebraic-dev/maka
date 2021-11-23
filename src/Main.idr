@@ -8,26 +8,23 @@ import Generics.Derive
 
 %language ElabReflection
 
-data Model = Increment | Decrement | Add Int
+data Model = Increment | Decrement
 
-%runElab derive "Model" [Generic, Eq]
-
-Show Model where 
-  show Increment = "inc"
-  show Decrement = "dec"
-  show (Add n) = "add \{show n}"
+Eq Model where 
+  (==) Increment Increment = True
+  (==) Decrement Decrement = True
+  (==) _ _ = False 
 
 update : Model -> Int -> Int 
 update Increment = (+ 1)
 update Decrement = (+ (- 1))
-update (Add n)   = (+ n)
 
 view : Int -> Html Model 
 view counter =
     div [id "main"] 
       [ button [onClick Increment] [text "Incrementar"]
       , p [] [text "Contador: \{show counter}"]
-      , if counter `mod` 2 == 1 then button [onClick Decrement] [text "Decrementar"] else (text "Nada")
+      , if counter `mod` 3 == 1 then button [onClick Decrement] [text "Decrementar"] else (text "Nada")
       ] 
 
 main : IO ()

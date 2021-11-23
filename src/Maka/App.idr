@@ -5,7 +5,7 @@ import Bindings.Dom.Render
 import Virtual.Diff
 import Virtual.Dom
 
-rootUpdater : (Eq msg, Show msg) => Symbol msg model 
+rootUpdater : Eq msg => Symbol msg model 
                      -> (model -> Html msg)
                      -> (msg -> model -> model) 
                      -> NodeElement 
@@ -13,18 +13,17 @@ rootUpdater : (Eq msg, Show msg) => Symbol msg model
                      -> (model, Html msg)
                      -> IO (model, Html msg) 
 
-rootUpdater symbol view up el msg (mod, oldView) = 
+rootUpdater symbol view up el msg (mod, oldView) = do
   let res     = up msg mod
-      html    = view res in do 
-    patch symbol (believe_me el) (diff oldView html)
-    print (diff oldView html)
-    pure (res, html)
+  let html    = view res 
+  patch symbol (believe_me el) (diff oldView html)
+  pure (res, html)
 
 public export
-start : (Eq msg, Show msg) => (model -> Html msg) -> (msg -> model -> model) -> model -> IO ()
+start : Eq msg => (model -> Html msg) -> (msg -> model -> model) -> model -> IO ()
 start view update init = do 
   Just main <- getElementById "main" 
-    | Nothing => putStrLn "Não tem o main"
+    | Nothing => putStrLn "Cannot find main div"
 
   let symbol = createSymbol "events"
   let html   = view init

@@ -1,0 +1,9 @@
+package maka 
+
+main       = Main
+sourcedir  = "src"
+executable = "maka.js"
+outputdir  = "build"
+depends    = elab-util, contrib
+
+opts="--codegen javascript"
